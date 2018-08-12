@@ -80,9 +80,9 @@
 		
 		<!--  Metamodel -->
 		<dependency>
-			<groupId>org.hibernate</groupId>
-			<artifactId>hibernate-jpamodelgen</artifactId>
-		</dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-jpamodelgen</artifactId>
+        </dependency>
 		
 		<!-- Spring Boot Security -->
 		<dependency>
