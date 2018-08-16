@@ -5,6 +5,8 @@ import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -28,18 +31,25 @@ import com.example.algamoney.api.service.PessoaService;
 public class PessoaResource {
 
 	@Autowired
-	private PessoaRepository repository;
+	private PessoaRepository pessoaRepository;
 
 	@Autowired
 	private ApplicationEventPublisher publisher;
 
 	@Autowired
 	private PessoaService pessoaService;
-
+	
+	
+	@GetMapping
+	@PreAuthorize("hasAuthority('ROLE_PESQUISAR_PESSOA')")
+	private Page<Pessoa> pesquisaNome(@RequestParam(required = false, defaultValue = "%") String nome, Pageable pageable) {
+		return pessoaRepository.findByNomeContaining(nome, pageable);
+	}
+	
 	@PostMapping
 	@PreAuthorize("hasAuthority('ROLE_CADASTRAR_PESSOA') and #oauth2.hasScope('write')")
 	public ResponseEntity<Pessoa> criar(@Valid @RequestBody Pessoa pessoa, HttpServletResponse response) {
-		Pessoa pessoaSalva = repository.save(pessoa);
+		Pessoa pessoaSalva = pessoaRepository.save(pessoa);
 
 		publisher.publishEvent(new RecursoCriadoEvent(this, response, pessoaSalva.getCodigo()));
 
@@ -49,7 +59,7 @@ public class PessoaResource {
 	@GetMapping("/{codigo}")
 	@PreAuthorize("hasAuthority('ROLE_PESQUISAR_PESSOA') and #oauth2.hasScope('read')")
 	public ResponseEntity<Pessoa> buscarPeloCodigo(@PathVariable Long codigo) {
-		Pessoa pessoa = repository.findOne(codigo);
+		Pessoa pessoa = pessoaRepository.findOne(codigo);
 		return (pessoa != null) ? ResponseEntity.ok(pessoa) : ResponseEntity.notFound().build();
 	}
 	
@@ -57,7 +67,7 @@ public class PessoaResource {
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	@PreAuthorize("hasAuthority('ROLE_REMOVER_PESSOA') and #oauth2.hasScope('write')")
 	public void remover(@PathVariable Long codigo) {
-		repository.delete(codigo);
+		pessoaRepository.delete(codigo);
 	}
 
 	@PutMapping("/{codigo}")
