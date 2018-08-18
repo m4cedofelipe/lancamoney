@@ -45,7 +45,7 @@ public class LancamentoResource {
 	private ApplicationEventPublisher publisher;
 
 	@Autowired
-	private LancamentoService service;
+	private LancamentoService lancamentoService;
 
 	@Autowired
 	private MessageSource messageSource;
@@ -60,6 +60,17 @@ public class LancamentoResource {
 	@PreAuthorize("hasAuthority('ROLE_PESQUISAR_LANCAMENTO') and #oauth2.hasScope('read')")
 	public Page<ResumoLancamento> resumoLancamento(LancamentoFilter lancamentoFilter, Pageable pageable) {
 		return lancamentoRepository.resumo(lancamentoFilter, pageable);
+	}
+	
+	@PostMapping("/{codigo}")
+	@PreAuthorize("hasAuthority('ROLE_CADASTRAR_LANCAMENTO') and #oauth2.hasScope('write')")
+	public ResponseEntity<Lancamento> atualizar(@PathVariable Long codigo, @Valid @RequestBody Lancamento lancamento) {
+		try {
+			Lancamento lancamentoSalvo = lancamentoService.atualizar(codigo, lancamento);
+			return ResponseEntity.ok(lancamentoSalvo);
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.notFound().build();
+		}
 	}
 	
 //	@GetMapping()
@@ -77,7 +88,7 @@ public class LancamentoResource {
 	@PostMapping
 	@PreAuthorize("hasAuthority('ROLE_CADASTRAR_LANCAMENTO') and #oauth2.hasScope('write')")
 	public ResponseEntity<Lancamento> criar(@Valid @RequestBody Lancamento lancamento, HttpServletResponse response) {
-		Lancamento lancamentoSalvo = service.salvar(lancamento);
+		Lancamento lancamentoSalvo = lancamentoService.salvar(lancamento);
 
 		publisher.publishEvent(new RecursoCriadoEvent(this, response, lancamentoSalvo.getCodigo()));
 
